@@ -267,25 +267,15 @@ The application features a robust mathematical engine that handles complex finan
 
 ### Unit Tests
 ```bash
-pnpm test:unit
-```
-
-### E2E Tests
-```bash
-pnpm test:e2e
-```
-
-### Test Coverage
-```bash
-pnpm test:coverage
+npm run test
 ```
 
 ## 🚀 Deployment
 
 ### Production Build
 ```bash
-pnpm build
-pnpm start
+npm run build
+npm start
 ```
 
 ### Environment Variables
