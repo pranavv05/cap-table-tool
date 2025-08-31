@@ -1,7 +1,9 @@
 "use client"
 
-import { useAuth } from "@clerk/nextjs"
+import { useAuth, useUser } from "@clerk/nextjs"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { LogOut, AlertTriangle, RefreshCw } from "lucide-react"
 import { AuthGuard } from "@/components/auth-guard"
 import ProfessionalCapTableInterface from "@/components/professional-cap-table-interface"
 import { useEffect, useState } from "react"
@@ -9,8 +11,6 @@ import { createClient } from "@/lib/supabase/client"
 import { Loading, CardSkeleton } from "@/components/ui/loading"
 import { PageErrorBoundary, useErrorHandler } from "@/components/ui/error-boundary"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
-import { AlertTriangle, RefreshCw } from "lucide-react"
 
 interface DashboardData {
   company: any
@@ -28,6 +28,17 @@ export default function DashboardPage() {
   const [retryCount, setRetryCount] = useState(0)
   const handleError = useErrorHandler()
   const router = useRouter()
+  const { signOut } = useAuth()
+  const { user } = useUser()
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      router.push("/")
+    } catch (error) {
+      console.error("Error signing out:", error)
+    }
+  }
 
   // TEMPORARY: In development, use a dummy user ID if auth is not working
   const isDevelopment = process.env.NODE_ENV === 'development'
@@ -151,25 +162,48 @@ export default function DashboardPage() {
   if (error) {
     return (
       <AuthGuard>
-        <div className="min-h-screen flex items-center justify-center bg-background p-6">
-          <div className="w-full max-w-md">
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Failed to load dashboard</AlertTitle>
-              <AlertDescription className="mt-2 space-y-3">
-                <p>{error}</p>
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={handleRetry}>
-                    <RefreshCw className="h-3 w-3 mr-1" />
-                    Try Again
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => router.push("/onboarding")}>
-                    Go to Onboarding
-                  </Button>
-                </div>
-              </AlertDescription>
-            </Alert>
-          </div>
+        <div className="flex flex-col min-h-screen">
+          <header className="bg-background border-b">
+            <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+              <h1 className="text-xl font-bold">Cap Table Dashboard</h1>
+              <div className="flex items-center space-x-4">
+                {user && (
+                  <span className="text-sm text-muted-foreground">
+                    {user.fullName || user.emailAddresses[0]?.emailAddress}
+                  </span>
+                )}
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleLogout}
+                  className="flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </Button>
+              </div>
+            </div>
+          </header>
+          <main className="flex-1 container mx-auto p-4">
+            <div className="w-full max-w-md">
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Failed to load dashboard</AlertTitle>
+                <AlertDescription className="mt-2 space-y-3">
+                  <p>{error}</p>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={handleRetry}>
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Try Again
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => router.push("/onboarding")}>
+                      Go to Onboarding
+                    </Button>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            </div>
+          </main>
         </div>
       </AuthGuard>
     )
@@ -178,51 +212,76 @@ export default function DashboardPage() {
   return (
     <PageErrorBoundary>
       <AuthGuard>
-        {loading ? (
-          <div className="min-h-screen bg-background p-6">
-            <div className="space-y-6">
-              {/* Header Skeleton */}
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <div className="h-8 bg-muted rounded w-64 animate-pulse" />
-                  <div className="h-4 bg-muted rounded w-96 animate-pulse" />
-                </div>
-                <div className="flex gap-3">
-                  <div className="h-9 w-9 bg-muted rounded animate-pulse" />
-                  <div className="h-9 w-24 bg-muted rounded animate-pulse" />
-                </div>
-              </div>
-              
-              {/* Metrics Cards Skeleton */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <CardSkeleton key={i} />
-                ))}
-              </div>
-              
-              {/* Main Content Skeleton */}
-              <div className="space-y-4">
-                <div className="h-10 bg-muted rounded w-full animate-pulse" />
-                <div className="h-96 bg-muted rounded w-full animate-pulse" />
+        <div className="flex flex-col min-h-screen">
+          <header className="bg-background border-b">
+            <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+              <h1 className="text-xl font-bold">Cap Table Dashboard</h1>
+              <div className="flex items-center space-x-4">
+                {user && (
+                  <span className="text-sm text-muted-foreground">
+                    {user.fullName || user.emailAddresses[0]?.emailAddress}
+                  </span>
+                )}
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleLogout}
+                  className="flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </Button>
               </div>
             </div>
-            
-            <Loading 
-              variant="financial" 
-              size="lg" 
-              message="Loading your cap table data..." 
-              className="fixed bottom-8 right-8" 
-            />
-          </div>
-        ) : data ? (
-          <ProfessionalCapTableInterface
-            company={data.company}
-            shareholders={data.shareholders}
-            equityGrants={data.equityGrants}
-            fundingRounds={data.fundingRounds}
-            scenarios={data.scenarios}
-          />
-        ) : null}
+          </header>
+          <main className="flex-1 container mx-auto p-4">
+            {loading ? (
+              <div className="min-h-screen bg-background p-6">
+                <div className="space-y-6">
+                  {/* Header Skeleton */}
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2">
+                      <div className="h-8 bg-muted rounded w-64 animate-pulse" />
+                      <div className="h-4 bg-muted rounded w-96 animate-pulse" />
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="h-9 w-9 bg-muted rounded animate-pulse" />
+                      <div className="h-9 w-24 bg-muted rounded animate-pulse" />
+                    </div>
+                  </div>
+                  
+                  {/* Metrics Cards Skeleton */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <CardSkeleton key={i} />
+                    ))}
+                  </div>
+                  
+                  {/* Main Content Skeleton */}
+                  <div className="space-y-4">
+                    <div className="h-10 bg-muted rounded w-full animate-pulse" />
+                    <div className="h-96 bg-muted rounded w-full animate-pulse" />
+                  </div>
+                </div>
+                
+                <Loading 
+                  variant="financial" 
+                  size="lg" 
+                  message="Loading your cap table data..." 
+                  className="fixed bottom-8 right-8" 
+                />
+              </div>
+            ) : (
+              <ProfessionalCapTableInterface
+                company={data?.company}
+                shareholders={data?.shareholders || []}
+                equityGrants={data?.equityGrants || []}
+                fundingRounds={data?.fundingRounds || []}
+                scenarios={data?.scenarios || []}
+              />
+            )}
+          </main>
+        </div>
       </AuthGuard>
     </PageErrorBoundary>
   )
